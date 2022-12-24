@@ -7,4 +7,5 @@ export type Crypto = {
   ath: number;
   atl: number;
   name: string;
+  owned: number;
 };

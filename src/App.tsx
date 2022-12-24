@@ -3,8 +3,8 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import CryptoSummary from "./components/CryptoSummary";
 import { Crypto } from "./Types";
-import type { ChartData, ChartOptions } from "chart.js";
-import moment from "moment";
+//import type { ChartData, ChartOptions } from "chart.js";
+//import moment from "moment";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,7 +15,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Line } from "react-chartjs-2";
+//import { Line } from "react-chartjs-2";
 
 ChartJS.register(
   CategoryScale,
@@ -29,8 +29,10 @@ ChartJS.register(
 
 function App() {
   const [cryptos, setCryptos] = useState<Crypto[] | null>();
-  const [selected, setSelected] = useState<Crypto | null>();
-  const [range, setRange] = useState<string>("30");
+  const [selected, setSelected] = useState<Crypto[]>([]);
+  //const [range, setRange] = useState<string>("30");
+
+  /*
   const [data, setData] = useState<ChartData<"line">>();
   const [options, setOptions] = useState<ChartOptions<"line">>({
     responsive: true,
@@ -44,6 +46,8 @@ function App() {
       },
     },
   });
+  */
+
   useEffect(() => {
     const url =
       "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false";
@@ -52,6 +56,7 @@ function App() {
     });
   }, []);
 
+  /*
   useEffect(() => {
     if (!selected) return;
     axios
@@ -98,14 +103,28 @@ function App() {
       },
     });
   }, [selected, range]);
+  */
 
+  useEffect(() => {
+    console.log("selected: ", selected);
+  }, [selected]);
+
+  function updateOwned(crypto: Crypto, amount: number): void {
+    console.log("updateOwned", crypto, amount);
+    let temp = [...selected];
+    let tempObj = temp.find((c) => c.id === crypto.id);
+    if (tempObj) {
+      tempObj.owned = amount;
+      setSelected(temp);
+    }
+  }
   return (
     <>
       <div className="App">
         <select
           onChange={(e) => {
-            const c = cryptos?.find((x) => x.id === e.target.value);
-            setSelected(c);
+            const c = cryptos?.find((x) => x.id === e.target.value) as Crypto;
+            setSelected([...selected, c]);
           }}
           defaultValue="default"
         >
@@ -120,7 +139,7 @@ function App() {
               })
             : null}
         </select>
-        <select
+        {/* <select
           onChange={(r) => {
             setRange(r.target.value);
           }}
@@ -128,14 +147,36 @@ function App() {
           <option value="30">30 Days</option>
           <option value="7">7 Days</option>
           <option value="1">1 Day</option>
-        </select>
+        </select> */}
       </div>
-      {selected ? <CryptoSummary crypto={selected} /> : null}
-      {data ? (
+      {selected
+        ? selected.map((x) => {
+            return (
+              <CryptoSummary crypto={x} updateOwned={updateOwned} key={x.id} />
+            );
+          })
+        : null}
+      {/* {selected ? <CryptoSummary crypto={selected} /> : null} */}
+      {/* {data ? (
         <div style={{ width: "600px" }}>
           <Line options={options} data={data} />
         </div>
-      ) : null}
+      ) : null} */}
+
+      {selected
+        ? "Your portfolio is worth: $" +
+          selected
+            .map((s) => {
+              return s.current_price * (s.owned ? s.owned : 0);
+            })
+            .reduce((prev, current) => {
+              return prev + current;
+            }, 0)
+            .toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })
+        : null}
     </>
   );
 }
